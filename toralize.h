@@ -8,13 +8,15 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-
 #define PROXY       "127.0.0.1"
 #define PROXYPORT   9050
+#define USERNAME "toralize"
+#define reqsize sizeof(struct proxy_request)
+#define ressize sizeof(struct proxy_response)
 
-typedef unsigned char uint8;
-typedef unsigned short uint16;
-typedef unsigned int uint32;
+typedef unsigned char   uint8;
+typedef unsigned short  uint16;
+typedef unsigned int    uint32;
 
 /*
 		+----+----+----+----+----+----+----+----+----+----+....+----+
@@ -46,3 +48,6 @@ struct proxy_response {
     uint32 __;
 };
 typedef struct proxy_response Res;
+
+Req *request(const char*, const int);
+int main(int, char**);
