@@ -44,7 +44,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
     }
 
     // Send the request to the proxy server
-    req = request((struct sockaddr_in *)&addr);
+    req = request((struct sockaddr_in *)addr);
     write(s, req, reqsize);
 
     // Read the response from the proxy server
