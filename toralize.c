@@ -1,36 +1,29 @@
 #include "toralize.h"
-Req *request(const char *dstip, const int dstport){
+Req *request(struct sockaddr_in *addr) {
     Req *req;
 
     req = malloc(reqsize);
     req->vn = 4;
     req->cd = 1;
-    req->dstport = htons(dstport);
-    req->dstip = inet_addr(dstip);
-    strncpy(req->userid, USERNAME, 7);
+    req->dstport = addr->sin_port;
+    req->dstip = addr->sin_addr.s_addr;
+    strncpy(req->userid, USERNAME, 8);
 
     return req;
 }   
 
-int main(int argc, char *argv[]){
-    char *host;
-    int port, s;
+int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen){
+
+    int s;
     struct sockaddr_in sock;
     Req *req;
     Res *res;
     char buf[ressize];
     int success;
     char tmp[512];
+    int (*p)(int, const struct sockaddr*, socklen_t);
 
-    // Check if the user provided the required arguments
-    if (argc < 3) {
-        fprintf(stderr, "Usage: %s <host> <port>\n", argv[0]);
-        return -1;
-    }
-
-    // Parse the command line arguments
-    host = argv[1];
-    port = atoi(argv[2]);
+    p = dlsym(RTLD_NEXT, "connect");
 
     // Create a socket
     s = socket(AF_INET, SOCK_STREAM, 0);
@@ -45,13 +38,13 @@ int main(int argc, char *argv[]){
     sock.sin_addr.s_addr = inet_addr(PROXY);
 
     // Connect to the proxy server 
-    if (connect(s, (struct sockaddr *)&sock, sizeof(sock))) {
+    if (p(s, (struct sockaddr *)&sock, sizeof(sock))) {
         perror("connect");
         return -1;
     }
 
     // Send the request to the proxy server
-    req = request(host, port);
+    req = request((struct sockaddr_in *)&addr);
     write(s, req, reqsize);
 
     // Read the response from the proxy server
@@ -73,20 +66,9 @@ int main(int argc, char *argv[]){
         free(req);
         return -1;
     }
-    printf("Proxy connection established to: %s:%d\n", host, port);
-    
-    memset(tmp, 0, 512);
-    snprintf(tmp, 511,
-        "HEAD / HTTP/1.0\r\n"
-        "Host: www.networktechnology.org\r\n"
-        "\r\n"
-    );
-    write(s, tmp, strlen(tmp));
-    memset(tmp, 0, 512);
-    read(s, tmp, 511);
-    printf("'%s'\n", tmp);
+    printf("Proxy connection established \n");
 
-    close(s);
+    dup2(s, sockfd);
     free(req);
     return 0;
 }
